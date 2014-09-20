@@ -10,6 +10,6 @@ Summary
 
 Data cube analysis
 ======
-Consider a warehouse: **<city, state, country, day, month, year, sales>** in which:
-- *<city, state, country>*: location dimension
-- *<day, month, year>*: temporal dimension
+Consider a warehouse: **(city, state, country, day, month, year, sales)** in which:
+- *(city, state, country)*: location dimension
+- *(day, month, year)*: temporal dimension
