@@ -32,3 +32,9 @@ Definitions
 - Each edge in the lattice represents a parent/child relationship between two cube regions or two cube groups
 - **Cubing task**: is to compute given measures for all valid cube groups
 - **Algebraic & Holistic & monotomic**: find in the paper for the formal definitions
+
+Challenges
+======
+*Cube expressed in Pig* by disjunction of groupy querys, then it combines all queries into a single MapReduce job. This approache is simple but effiencient for small datasets. But when the scale of data increases, this algorithm to perform poorly and eventually fail: size of intermediate data and size of large groups.
+
+- Size of Intermediate Data: |C| * |D|, where |C| is the number of regions in the cube lattice and |D| is the size of the input data
