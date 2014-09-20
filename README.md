@@ -20,5 +20,5 @@ There are two main limitations in the existing techniques:
 - Many of them **takes advantage** of the measure being **algebraic**.
 
 How to **efficiently extend** cube analysis for **holistic measures** in **Map Reduce paradigm**? Existing problems:
-- Effective distribute data: avoid overhemlmed for any single machine --> address by identifying the partially algebraic measures and value partition mechanism.
-- Effective distribute computation: good balance between the amount of intermediate data being produced and the pruning unnessary data.
+- *Effective distribute data*: avoid overhemlmed for any single machine --> address by **identifying the partially algebraic measures** and **value partition mechanism**.
+- *Effective distribute computation*: good balance between the amount of intermediate data being produced and the pruning unnessary data --> adress by **batch areas** 
