@@ -30,3 +30,5 @@ Definitions
 - **Cube region**: each node in cube lattice represents one possible grouping 
 - **Cube group**: an actual tuple belonging to a cube region.
 - Each edge in the lattice represents a parent/child relationship between two cube regions or two cube groups
+- **Cubing task**: is to compute given measures for all valid cube groups
+- **Algebraic & Holistic & monotomic**: find in the paper for the formal definitions
