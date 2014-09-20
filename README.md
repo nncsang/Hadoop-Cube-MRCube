@@ -13,3 +13,8 @@ Data cube analysis
 Consider a warehouse: **(city, state, country, day, month, year, sales)** in which:
 - *(city, state, country)*: location dimension
 - *(day, month, year)*: temporal dimension
+Cube analysis computes aggregate measures (e.g *sales*) over all possible groups defined by the two dimesions. 
+
+There are two main limitations in the existing techniques:
+- They designed for a single machine or clusters with small number of nodes. With the growing of data (terabytes accumalted per day), it is difficult to process data with that infrastructure.
+- Many of them takes advantage of the measure being algebraic.
