@@ -42,3 +42,12 @@ Challenges
 
 The MR-Cube approach
 ======
+**Note**: the complexity of cubing tasks depend on:
+- **data size**: --> intermediate data size, the size of large group
+- **cube lattice size** (is controlled by the number/depth of dimensions--> intermediate data size
+
+MR-Cube approach deal with those complexities in a two-pronged attack: **data partitioning** and **cube lattice partitioning**
+
+Partially Algebraic Measures
+======
+- Purpose: to identify a subset of holistic measures that are easy to compute in parallel than an arbitrary holistic measure
