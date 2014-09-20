@@ -16,5 +16,7 @@ Consider a warehouse: **(city, state, country, day, month, year, sales)** in whi
 Cube analysis computes aggregate measures (e.g *sales*) over all possible groups defined by the two dimesions. 
 
 There are two main limitations in the existing techniques:
-- They designed for a single machine or clusters with small number of nodes. With the growing of data (terabytes accumalted per day), it is difficult to process data with that infrastructure.
-- Many of them takes advantage of the measure being algebraic.
+- They designed for a **single machine** or **clusters with small number of nodes**. With the growing of data (terabytes accumalted per day), it is **difficult** to **process** data with that infrastructure.
+- Many of them **takes advantage** of the measure being **algebraic**.
+
+How to **efficiently extend** cube analysis for **holistic measures** in **Map Reduce paradigm**
