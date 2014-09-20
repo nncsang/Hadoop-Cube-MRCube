@@ -22,3 +22,11 @@ There are two main limitations in the existing techniques:
 How to **efficiently extend** cube analysis for **holistic measures** in **Map Reduce paradigm**? Existing problems:
 - *Effective distribute data*: avoid overhemlmed for any single machine --> address by **identifying the partially algebraic measures** and **value partition mechanism**.
 - *Effective distribute computation*: good balance between the amount of intermediate data being produced and the pruning unnessary data --> adress by **batch areas** 
+
+Definitions
+======
+- **Dimension attributes**: attributes that users want to analyze
+- **Cube lattice**: all possible grouping(s) of the attributes
+- **Cube region**: each node in cube lattice represents one possible grouping 
+- **Cube group**: an actual tuple belonging to a cube region.
+- Each edge in the lattice represents a parent/child relationship between two cube regions or two cube groups
