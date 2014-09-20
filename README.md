@@ -1,6 +1,6 @@
 MRCube
 ======
-In this project, I implemented MRCube algorithm in **"Distributed Cube Materialization on Holistic Measures"** of Arnab Nandi, Cong Yu, Philip Bohannon, Raghu Ramakrishnan.
+In this project, I implemented MRCube algorithm in **"Distributed Cube Materialization on Holistic Measures"** of *Arnab Nandi, Cong Yu, Philip Bohannon, Raghu Ramakrishnan*.
 
 Summary
 ======
@@ -19,4 +19,6 @@ There are two main limitations in the existing techniques:
 - They designed for a **single machine** or **clusters with small number of nodes**. With the growing of data (terabytes accumalted per day), it is **difficult** to **process** data with that infrastructure.
 - Many of them **takes advantage** of the measure being **algebraic**.
 
-How to **efficiently extend** cube analysis for **holistic measures** in **Map Reduce paradigm**
+How to **efficiently extend** cube analysis for **holistic measures** in **Map Reduce paradigm**? Existing problems:
+- Effective distribute data: avoid overhemlmed for any single machine --> address by identifying the partially algebraic measures and value partition mechanism.
+- Effective distribute computation: good balance between the amount of intermediate data being produced and the pruning unnessary data.
