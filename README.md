@@ -71,4 +71,5 @@ Based on these analyses, the authors proposed **sampling approach**
 
 Sampling Approach
 ======
-
+- Estimate the **reducer-unfriendliness** of each **cube region** based on **the number of groups it is estimated to have**
+- Perform **partitioning for all groups** within the list of cube regions (a small list) that are estimated to be reducer **unfriendly**
