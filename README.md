@@ -43,11 +43,32 @@ Challenges
 The MR-Cube approach
 ======
 **Note**: the complexity of cubing tasks depend on:
-- **data size**: --> intermediate data size, the size of large group
-- **cube lattice size** (is controlled by the number/depth of dimensions--> intermediate data size
+- **data size**: impacts intermediate data size, the size of large group
+- **cube lattice size** (is controlled by the number/depth of dimensions impacts intermediate data size
 
 MR-Cube approach deal with those complexities in a two-pronged attack: **data partitioning** and **cube lattice partitioning**
 
 Partially Algebraic Measures
 ======
-- Purpose: to identify a subset of holistic measures that are easy to compute in parallel than an arbitrary holistic measure
+- Purpose: to identify a subset of holistic measures that are easy to compute in **parallel** than an arbitrary holistic measure.
+- We call this technique of partitioning large groups based on the algebraic attribute **value partitioning**, and the ratio by which a group is partitioned the **partition factor**
+
+Value Partitioning
+======
+An easy way to accomplish value partitioning is to run the naive algorithm, but further **partition each cube group based on the algebraic attribute**. The number of map keys being produced is now **the product of the number of groups and the partition factor**.
+
+Observations:
+- Many of the original groups contain a manageable number of tuples and partitioning those groups is entirely unnecessary
+- Even for large, reducer- unfriendly, groups, some will require partitioning into many sub-groups (i.e., large partition factor), while others will only need to be partitioned into a few sub-groups
+
+The idea is to perform value partitioning only on groups that are likely to be **reducer-unfriendly** and **dynamically adjust the partition factor**
+
+Approaches:
+- Detect reducer unfriendly groups on the fly and perform partitioning upon detection -> overwhelm the mapper since it requires us to maintain information about groups visited.
+- Scan the data and compile a list of potentially reducer-unfriendly groups for which the mapper will perform partitioning -> Checking against a potentially large list slows down the mapper.
+
+Based on these analyses, the authors proposed **sampling approach**
+
+Sampling Approach
+======
+
