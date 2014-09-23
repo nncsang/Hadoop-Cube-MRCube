@@ -6,8 +6,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import fr.eurecom.dsg.mapreduce.WordCount;
-
 public class EstimateMRCube extends Configured implements Tool {
 	private int numReducers;
 	private Path inputFile;
@@ -19,7 +17,7 @@ public class EstimateMRCube extends Configured implements Tool {
 	}
 	
 	public EstimateMRCube(String[] args) {
-	    if (args.length != 4) {
+	    if (args.length != 3) {
 	      System.out.print(args.length);
 	      System.out.println("Usage: WordCount <num_reducers> <input_path> <output_path>");
 	      System.exit(0);
