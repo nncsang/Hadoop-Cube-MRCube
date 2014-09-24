@@ -1,0 +1,5 @@
+Item,*,Store	2
+Item,*,*	3
+*,*,Store	4
+*,*,*	9
+*,Color,Store	3
