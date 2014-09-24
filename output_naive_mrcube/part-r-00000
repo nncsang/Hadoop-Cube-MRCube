@@ -12,6 +12,9 @@
 (*,White,B)	1
 (*,White,C)	30
 (Chair,*,*)	321
+(Chair,*,A)	101
+(Chair,*,C)	10
+(Chair,*,D)	210
 (Chair,Blue,*)	101
 (Chair,Blue,A)	101
 (Chair,Red,*)	210
@@ -19,6 +22,9 @@
 (Chair,White,*)	10
 (Chair,White,C)	10
 (Glass,*,*)	40
+(Glass,*,A)	10
+(Glass,*,C)	20
+(Glass,*,D)	10
 (Glass,Blue,*)	10
 (Glass,Blue,A)	10
 (Glass,Red,*)	10
@@ -26,6 +32,8 @@
 (Glass,White,*)	20
 (Glass,White,C)	20
 (Table,*,*)	348
+(Table,*,A)	347
+(Table,*,B)	1
 (Table,Blue,*)	124
 (Table,Blue,A)	124
 (Table,Red,*)	223
