@@ -115,7 +115,8 @@ Sampling:
 - Result: two regions are unfriendly reducers which are (all, all, all, all), (all, month, all, all) and (all, all, all, distance) with the partition factor is 2.7%
 
 Batching:
-A: month, B: flightnum, C: des, D: distance
+*A: month, B: flightnum, C: des, D: distance*
+
 5 patches:
 - (all, all, all, all) & A
 - C D CD
