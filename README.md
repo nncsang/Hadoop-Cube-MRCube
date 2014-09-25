@@ -95,3 +95,20 @@ Given the annotated cube lattice, we can again directly apply the naive algorith
 Each batch area represents **a collection of regions** that share a **common ancestor region**. Mappers can now emit **one key-value pair** per batch for each data tuple. Reducers, on the other hand, instead of simply applying the measure function, **execute a traditional cube computation algorithm** over the set of tuples using the batch area as the local cube lattice.
 
 Reading more in the paper how to form batches
+
+My experiment
+======
+Naive algorithm: 
+- Num of intermediate keys: 20 989 216 = 1 311 826 * 2^4 
+- Size of intermediate keys: 2.54 GB
+- Time execution: 3 minutes
+
+MRCube algorithm:
+Assumption:
+- The limit tuples that one recuder can handle: 400
+- Data size: 1311826
+Sampling: 
+- r = limitTuplesPerReducer / dataSize
+- N = 100 / r + 1;
+- Result: two regions are unfriendly reducers which are (*, *, *, *) and (*, Month, *, *)
+
