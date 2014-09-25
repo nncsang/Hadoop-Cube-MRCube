@@ -104,11 +104,24 @@ Naive algorithm:
 - Time execution: 3 minutes
 
 MRCube algorithm:
-Assumption:
-- The limit tuples that one recuder can handle: 400
-- Data size: 1311826
-Sampling: 
-- r = limitTuplesPerReducer / dataSize
-- N = 100 / r + 1;
-- Result: two regions are unfriendly reducers which are (*, *, *, *) and (*, Month, *, *)
 
+Assumption:
+- The limit tuples that one recuder can handle: 10000
+- Data size: 1311826
+
+Sampling: 
+- r = limitTuplesPerReducer / dataSize = 10000 / 1311826 ~ 0.0076
+- N = 100 / r + 1 = 13119;
+- Result: two regions are unfriendly reducers which are (all, all, all, all), (all, month, all, all) and (all, all, all, distance) with the partition factor is 2.7%
+
+Batching:
+A: month, B: flightnum, C: des, D: distance
+5 patches:
+- (all, all, all, all) & A
+- C D CD
+- B BC BD BCD
+- AC AD ACD
+- AB ABD ABC ABCD
+
+- Num of intermediate keys: 6 559 130 = 1311826 * 5 (batches)
+- Size of intermediate keys: 762 MB
