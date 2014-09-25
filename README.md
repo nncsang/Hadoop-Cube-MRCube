@@ -7,7 +7,7 @@ Data
  - http://stat-computing.org/dataexpo/2009/the-data.html: data from 1987
  - Size after uncompressing:  127.2MB
  - Num of records: 1 311 827
- - Fields interested: Year, Month, DayofMoth, DayofWeek, FlightNum, AirTime, ArrDelay, DepDelay, Des, Distance, CancellationCode, Diverted (12 fields in total)
+ - Fields interested: Month, FlightNum, Des, Distance (4 fields in total)
 
 Summary
 ======
@@ -80,3 +80,18 @@ Sampling Approach
 ======
 - Estimate the **reducer-unfriendliness** of each **cube region** based on **the number of groups it is estimated to have**
 - Perform **partitioning for all groups** within the list of cube regions (a small list) that are estimated to be reducer **unfriendly**
+
+This sampling is accomplished by performing cube computation using the naive algorithm on a small random subset of data, with count as the measure.
+
+We declare a group G to be reducer-unfriendly if we observe more than 0.75rN tuples of G in the sample, where N is the sample size and r= c/ |D| denotes the maximum number of tuples a single reducer can handle (c) as a percentage of the overall data size (|D|). (See Proposition 1 in the paper for more details)
+
+A region to be reducer-unfriendly if it contains at least one reducer-unfriendly group. In addition, let the sample count of the largest reducer-unfriendly group in the region be s, we annotate the region with **the appropriate
+partition factor**, an integer that is closest to (s/(r * n))^3
+
+Batch Areas
+======
+Given the annotated cube lattice, we can again directly apply the naive algorithm, process each cube group independently with the added safeguard that partitions the groups that belong to a reducer-unfriendly region. But **each tuple** is still duplicated **at least |C| times** and the naive approach is its **incompatibility** with **pruning for monotonic measures**. We need combine regions into batch areas.
+
+Each batch area represents **a collection of regions** that share a **common ancestor region**. Mappers can now emit **one key-value pair** per batch for each data tuple. Reducers, on the other hand, instead of simply applying the measure function, **execute a traditional cube computation algorithm** over the set of tuples using the batch area as the local cube lattice.
+
+Reading more in the paper how to form batches
