@@ -42,6 +42,7 @@ public class EstimateMRCube extends Configured implements Tool {
 	private int numReducers;
 	private Path inputFile;
 	private Path outputDir;
+	private Sampler sampler;
 	
 	public static void main(String args[]) throws Exception {
 	    int res = ToolRunner.run(new Configuration(), new EstimateMRCube(args), args);
@@ -63,14 +64,24 @@ public class EstimateMRCube extends Configured implements Tool {
 	@Override
 	public int run(String[] arg0) throws Exception {
 		Configuration conf = this.getConf();
-		conf.set("attributeNames", "Item\tColor\tStore");
-		conf.set("measuredAttributeName", "Quantity");
+		String[] attributes = {/*"Year",*/ "Month",/*"DayofMonth","DayOfWeek",*/
+				"FlightNum",
+				/*"AirTime","ArrDelay","DepDelay",*/
+				"Dest","Distance",
+				/*"CancellationCode","Diverted"*/};
+		
+		conf.set("attributeNames", BUC.join(attributes, "\t"));
+		conf.set("measuredAttributeName", "Count");
 		
 		FileSystem fs = FileSystem.get(conf);
 		if(fs.exists(outputDir)){
 			fs.delete(outputDir, true);
 		}
-		    
+		
+		String output_sampler = "sampler.txt";
+		sampler = new Sampler(inputFile.toString(), output_sampler);
+		sampler.sampling(conf);
+		
 		Job job = new Job(conf, "EstimateMRCube");
 		
 		job.setInputFormatClass(TextInputFormat.class);
@@ -89,7 +100,7 @@ public class EstimateMRCube extends Configured implements Tool {
 		
 		job.setOutputFormatClass(TextOutputFormat.class);
 		    
-		FileInputFormat.addInputPath(job, inputFile);
+		FileInputFormat.addInputPath(job, new Path(output_sampler));
 		    
 		FileOutputFormat.setOutputPath(job, outputDir);
 		    
@@ -102,7 +113,7 @@ public class EstimateMRCube extends Configured implements Tool {
 }
 
 class EstimateMRCubeMapper extends Mapper<LongWritable, Text, TextPair, IntWritable>{
-	private InputReader reader = new InventoryReader();
+	private InputReader reader = new AirPlaneReader();
 	private String[] attributeNames;
 	
 	private BUC buc;
@@ -167,7 +178,7 @@ class EstimateMRCubeMapper extends Mapper<LongWritable, Text, TextPair, IntWrita
 }
 
 class EstimateMRCubeReducer extends Reducer<TextPair, IntWritable, Text, IntWritable>{
-	private InputReader reader = new InventoryReader();
+	private InputReader reader = new AirPlaneReader();
 	private Map<String, Integer> regions = new HashMap<String, Integer>();
 	
 	@Override
@@ -194,7 +205,12 @@ class EstimateMRCubeReducer extends Reducer<TextPair, IntWritable, Text, IntWrit
 	protected void cleanup(Context context) throws IOException, InterruptedException {
 		Set<Entry<String, Integer>> entries = regions.entrySet();
 		for(Entry<String, Integer> entry: entries){
-			context.write(new Text(entry.getKey()), new IntWritable(entry.getValue()));
+			Text annonated = new Text("");
+			
+			if (entry.getValue() > MRCubeSetting.limitTuplesPerReducer)
+				annonated = new Text(" (*) ");
+			
+			context.write(new Text(entry.getKey().concat(annonated.toString())), new IntWritable(entry.getValue()));
 		}
 	}
 }
@@ -204,7 +220,7 @@ class EstimateMRCubePartitioner extends Partitioner<TextPair, IntWritable> {
 	public int getPartition(TextPair key, IntWritable value, int numPartitions) {	
 		int partition =  (key.getFirst().hashCode()) % numPartitions;
 		if (partition < 0)
-			partition = - partition;
+			partition = -partition;
 		return partition;
 	}
 }

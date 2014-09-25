@@ -2,6 +2,13 @@ MRCube
 ======
 In this project, I implemented MRCube algorithm in **"Distributed Cube Materialization on Holistic Measures"** of *Arnab Nandi, Cong Yu, Philip Bohannon, Raghu Ramakrishnan*.
 
+Data
+======
+ - http://stat-computing.org/dataexpo/2009/the-data.html: data from 1987
+ - Size after uncompressing:  127.2MB
+ - Num of records: 1 311 827
+ - Fields interested: Year, Month, DayofMoth, DayofWeek, FlightNum, AirTime, ArrDelay, DepDelay, Des, Distance, CancellationCode, Diverted (12 fields in total)
+
 Summary
 ======
  - Cube computation over massive datasets is critical for many important analyses done in the real world

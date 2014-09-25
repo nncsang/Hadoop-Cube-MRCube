@@ -1,2 +1,4 @@
-Item,Color,Store	1
-Item,Color,*	1
+*,*,Dest,Distance	10
+*,*,*,* (*) 	1295
+Month,FlightNum,*,*	4
+Month,FlightNum,Dest,*	2

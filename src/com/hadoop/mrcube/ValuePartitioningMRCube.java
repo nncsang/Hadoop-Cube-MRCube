@@ -3,10 +3,10 @@ package com.hadoop.mrcube;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -14,6 +14,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -27,31 +28,13 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.hadoop.buc.BUC;
 import com.hadoop.buc.InputReader;
-import com.hadoop.buc.InventoryReader;
 
-public class NaiveMRCube extends Configured implements Tool {
+public class ValuePartitioningMRCube extends Configured implements Tool{
+	
 	private int numReducers;
 	private Path inputFile;
 	private Path outputDir;
 	public static int numOfIntermeadiateKey = 0;
-	
-	public static void main(String args[]) throws Exception {
-	    int res = ToolRunner.run(new Configuration(), new NaiveMRCube(args), args);
-	    //System.out.println(numOfIntermeadiateKey);
-	    System.exit(res);
-	}
-	
-	public NaiveMRCube(String[] args) {
-	    if (args.length != 3) {
-	      System.out.print(args.length);
-	      System.out.println("Usage: WordCount <num_reducers> <input_path> <output_path>");
-	      System.exit(0);
-	    }
-	    
-	    this.numReducers = Integer.parseInt(args[0]);
-	    this.inputFile = new Path(args[1]);
-	    this.outputDir = new Path(args[2]);
-	}
 	
 	@Override
 	public int run(String[] arg0) throws Exception {
@@ -62,7 +45,10 @@ public class NaiveMRCube extends Configured implements Tool {
 				"Dest","Distance",
 				/*"CancellationCode","Diverted"*/};
 		
+		String annonateCube = "*,*,*,*";
 		conf.set("attributeNames", BUC.join(attributes, "\t"));
+		conf.set("annonatedCube", annonateCube);
+		conf.set("partiallyAlgebraicMeasure", "FlightNum");
 		conf.set("measuredAttributeName", "Count");
 		
 		//if file output is existed, delete it
@@ -71,19 +57,19 @@ public class NaiveMRCube extends Configured implements Tool {
 			fs.delete(outputDir, true);
 		}
 		    
-		Job job = new Job(conf, "NaiveMRCube"); // TODO: define new job instead of null using conf
+		Job job = new Job(conf, "ValuePartitioningMRCube"); // TODO: define new job instead of null using conf
 		
 		// TODO: set job input format
 		job.setInputFormatClass(TextInputFormat.class);
 		    
 		// TODO: set map class and the map output key and value classes
-		job.setMapperClass(NaiveMRCubeMapper.class);
+		job.setMapperClass(ValuePartitioningMRCubeMapper.class);
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(Text.class);
 		    
 		// TODO: set reduce class and the reduce output key and value classes
-		job.setReducerClass(NaiveMRCubeReducer.class);
-		job.setOutputKeyClass(Text.class);
+		job.setReducerClass(ValuePartitioningMRCubeReducer.class);
+		job.setOutputKeyClass(NullWritable.class);
 		job.setOutputValueClass(IntWritable.class);
 		    
 		// TODO: set job output format
@@ -101,16 +87,34 @@ public class NaiveMRCube extends Configured implements Tool {
 		job.setNumReduceTasks(numReducers);
 		    
 		    // TODO: set the jar class
-		job.setJarByClass(NaiveMRCube.class);
+		job.setJarByClass(ValuePartitioningMRCube.class);
 		
-		return job.waitForCompletion(true) ? 0 : 1; // this will execute the job		
+		return job.waitForCompletion(true) ? 0 : 1; // this will execute the job
+	}
+	
+	public static void main(String args[]) throws Exception {
+	    int res = ToolRunner.run(new Configuration(), new ValuePartitioningMRCube(args), args);
+	    //System.out.println(numOfIntermeadiateKey);
+	    System.exit(res);
+	}
+	
+	public ValuePartitioningMRCube(String[] args) {
+	    if (args.length != 3) {
+	      System.out.print(args.length);
+	      System.out.println("Usage: ValuePartitioningMRCube <num_reducers> <input_path> <output_path>");
+	      System.exit(0);
+	    }
+	    
+	    this.numReducers = Integer.parseInt(args[0]);
+	    this.inputFile = new Path(args[1]);
+	    this.outputDir = new Path(args[2]);
 	}
 }
 
-class NaiveMRCubeMapper extends Mapper<LongWritable, Text, Text, Text>{
+class ValuePartitioningMRCubeMapper extends Mapper<LongWritable, Text, Text, Text>{
 	private InputReader reader = new AirPlaneReader();
 	private String[] attributeNames;
-	
+	private String partiallyAlgebraicMeasure;
 	private BUC buc;
 	private Set<String> cubeRegions;
 	private List<List<String>> cubeRegionsList = new ArrayList<List<String>>();
@@ -119,15 +123,10 @@ class NaiveMRCubeMapper extends Mapper<LongWritable, Text, Text, Text>{
 	protected void setup(Context context) throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
 		attributeNames = conf.get("attributeNames").split("\t");
+		partiallyAlgebraicMeasure = conf.get("partiallyAlgebraicMeasure");
 		
-		buc = new BUC(null, attributeNames, null, attributeNames.length, 0, null);
-		cubeRegions = buc.cubeRegions();
-		
-		Iterator<String> itor = cubeRegions.iterator();
-		while(itor.hasNext()){
-			String[] attributes = itor.next().split(",");
-			cubeRegionsList.add(Arrays.asList(attributes));
-		}
+		String[] attributes = conf.get("annonatedCube").split(",");
+		cubeRegionsList.add(Arrays.asList(attributes));
 	}
 	
 	@Override
@@ -151,33 +150,42 @@ class NaiveMRCubeMapper extends Mapper<LongWritable, Text, Text, Text>{
 	    		}
 	    	}
 	    	
-	    	Text keyTxt = new Text(BUC.join(key, ","));
+	    	Text keyTxt = new Text(BUC.join(key, ",").concat("\t" + reader.getValueByAttributeName(partiallyAlgebraicMeasure).hashCode()));
 	    	Text valueTxt = new Text(line);
 	    	
 	    	context.write(keyTxt, valueTxt);
-	    	NaiveMRCube.numOfIntermeadiateKey++;
 	    }
 	}
 }
 
-class NaiveMRCubeReducer extends Reducer<Text, Text, Text, IntWritable>{
+class ValuePartitioningMRCubeReducer extends Reducer<Text, Text, NullWritable, IntWritable>{
 	private InputReader reader = new AirPlaneReader();
 	private String measuredAttributeName;
+	Set<String> set = new HashSet<String>();
+	String partiallyAlgebraicMeasure = "";
 	
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
-		measuredAttributeName = context.getConfiguration().get("measuredAttributeName");
+		Configuration conf = context.getConfiguration();
+		measuredAttributeName = conf.get("measuredAttributeName");
+		partiallyAlgebraicMeasure = conf.get("partiallyAlgebraicMeasure");
 	}
 	
 	@Override
 	protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-		int sum = 0;
 		for(Text value: values){
-			reader.initWithString(value.toString());
-			int num = Integer.parseInt(reader.getValueByAttributeName(measuredAttributeName));
-			sum += num;
+			String data = value.toString();
+			reader.initWithString(data);
+			set.add(reader.getValueByAttributeName(partiallyAlgebraicMeasure));
 		}
-		
-		context.write(new Text("(" + key.toString() + ")"), new IntWritable(sum));
+	}
+	
+	@Override
+	protected void cleanup(Context context)
+			throws IOException, InterruptedException {
+		// TODO Auto-generated method stub
+		context.write(NullWritable.get(), new IntWritable(set.size()));
 	}
 }
+
+

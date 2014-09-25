@@ -1,1 +1,7 @@
-*,Color,*	3
+Month,FlightNum,Dest,Distance	2
+Month,FlightNum,*,Distance	2
+*,FlightNum,Dest,Distance	3
+*,FlightNum,*,Distance	3
+*,FlightNum,Dest,*	3
+*,*,*,Distance	14
+*,FlightNum,*,*	6

@@ -1,5 +1,5 @@
-Item,*,Store	2
-Item,*,*	3
-*,*,Store	4
-*,*,*	9
-*,Color,Store	3
+Month,*,Dest,Distance	4
+Month,*,Dest,*	28
+Month,*,*,* (*) 	435
+*,*,Dest,*	68
+Month,*,*,Distance	7
