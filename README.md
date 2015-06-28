@@ -2,7 +2,7 @@ MRCube
 ======
 In this project, I implemented MRCube algorithm which is described in **"Distributed Cube Materialization on Holistic Measures"** of *Arnab Nandi, Cong Yu, Philip Bohannon, Raghu Ramakrishnan*.
 
-Data
+Dataset
 ======
  - http://stat-computing.org/dataexpo/2009/the-data.html: data from 1987
  - Uncompressed size:  127.2MB
