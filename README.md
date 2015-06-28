@@ -5,30 +5,30 @@ In this project, I implemented MRCube algorithm in **"Distributed Cube Materiali
 Data
 ======
  - http://stat-computing.org/dataexpo/2009/the-data.html: data from 1987
- - Size after uncompressing:  127.2MB
- - Num of records: 1 311 827
- - Fields interested: Month, FlightNum, Des, Distance (4 fields in total)
+ - Uncompressed size:  127.2MB
+ - Number of records: 1 311 827
+ - Fields interested: Month, FlightNum (Flight number), Des (Destination), Distance (4 fields in total)
 
 Summary
 ======
  - Cube computation over massive datasets is critical for many important analyses done in the real world
- - **Algebraic measures** (i.e *SUM*) are easy to parallel. On the other hand, **holistic measures** (i.e *REACH, TOP-K*) is non-trivial.
- - In the paper, the authors identified an important subset of holistic measures and introduce MR-Cube algorithm for efficient cube computation on these measures.
+ - **Algebraic measures** (e.g. *SUM*) are easy to parallel. On the other hand, **holistic measures** (e.g. *REACH, TOP-K*) is non-trivial.
+ - In the paper, the authors identified an important subset of holistic measures and introduced MR-Cube algorithm for efficient cube computation on these measures.
 
 Data cube analysis
 ======
 Consider a warehouse: **(city, state, country, day, month, year, sales)** in which:
 - *(city, state, country)*: location dimension
 - *(day, month, year)*: temporal dimension
-Cube analysis computes aggregate measures (e.g *sales*) over all possible groups defined by the two dimesions. 
+Cube analysis computes aggregate measures (e.g. *sales*) over all possible groups defined by the two dimensions. 
 
 There are two main limitations in the existing techniques:
-- They designed for a **single machine** or **clusters with small number of nodes**. With the growing of data (terabytes accumalted per day), it is **difficult** to **process** data with that infrastructure.
+- They designed for a **single machine** or **clusters with small number of nodes**. With the growing of data (terabytes accumulated per day), it is **difficult** to **process** data with that infrastructure.
 - Many of them **takes advantage** of the measure being **algebraic**.
 
 How to **efficiently extend** cube analysis for **holistic measures** in **Map Reduce paradigm**? Existing problems:
-- *Effective distribute data*: avoid overhemlmed for any single machine --> address by **identifying the partially algebraic measures** and **value partition mechanism**.
-- *Effective distribute computation*: good balance between the amount of intermediate data being produced and the pruning unnessary data --> adress by **batch areas** 
+- *Effective distribute data*: avoid overwhelmed for any single machine --> addressed by **identifying the partially algebraic measures** and **value partition mechanism**.
+- *Effective distributing computation*: good balance between the amount of intermediate data being produced and the pruning unnecessary data --> addressed by **batch areas** 
 
 Definitions
 ======
@@ -38,18 +38,18 @@ Definitions
 - **Cube group**: an actual tuple belonging to a cube region.
 - Each edge in the lattice represents a parent/child relationship between two cube regions or two cube groups
 - **Cubing task**: is to compute given measures for all valid cube groups
-- **Algebraic & Holistic & monotomic**: find in the paper for the formal definitions
+- **Algebraic & Holistic & monotonic**: please find in the paper for the formal definitions
 
 Challenges
 ======
-*Cube expressed in Pig* by disjunction of groupy querys, then it combines all queries into a single MapReduce job. This approache is simple but effiencient for small datasets. But when the scale of data increases, this algorithm to perform poorly and eventually fail: size of intermediate data and size of large groups.
+*Cube expressed in Pig* by disjunction of group-by queries, then it combines all queries into a single MapReduce job. This approach is simple but only efficient for small datasets. When the scale of data increases, this algorithm to perform poorly and eventually fail due to the huge size of intermediate data and size of large groups.
 
 - Size of Intermediate Data: |C| * |D|, where |C| is the number of regions in the cube lattice and |D| is the size of the input data
-- Size of Large Groups: The reducer that is assigned the cube regions at the bottom part of the cube lattice essentially has to compute the measure for the entire dataset, which is usually large enough to cause the reducer to take significantly longer time to finish than others or even fail. For algebraic measures, this challenge can addressed by not processing those groups directly: we can first compute measures only for those smaller, reducer-friendly, groups, then combine those measures to produce the measure for the larger, reducer-unfriendly, groups. Such measures are also amenable to mapper-side aggregation which further decreases the load on the shuffle and reduce phases. For holistic measures, however, measures for larger groups can not be assembled from their smaller child groups, and mapper-side aggregation is also not possible. Hence, we need a different approach.
+- Size of Large Groups: The reducer that is assigned the cube regions at the bottom part of the cube lattice essentially has to compute the measure for the entire dataset, which is usually large enough to cause the reducer to take significantly longer time to finish than others or even fail. For algebraic measures, this challenge can addressed by not processing those groups directly: we can first compute measures only for those smaller, reducer-friendly, groups, then combine those measures to produce the measure for the larger, reducer-unfriendly, groups. Such measures are also amenable to mapper-side aggregation which further decreases the load on the shuffle and reduce phases. For holistic measures, however, measures for larger groups cannot be assembled from their smaller child groups, and mapper-side aggregation is also not possible. Hence, we need a different approach.
 
 The MR-Cube approach
 ======
-**Note**: the complexity of cubing tasks depend on:
+**Note**: the complexity of cubing tasks depends on:
 - **data size**: impacts intermediate data size, the size of large group
 - **cube lattice size** (is controlled by the number/depth of dimensions impacts intermediate data size
 
@@ -85,8 +85,7 @@ This sampling is accomplished by performing cube computation using the naive alg
 
 We declare a group G to be reducer-unfriendly if we observe more than 0.75rN tuples of G in the sample, where N is the sample size and r= c/ |D| denotes the maximum number of tuples a single reducer can handle (c) as a percentage of the overall data size (|D|). (See Proposition 1 in the paper for more details)
 
-A region to be reducer-unfriendly if it contains at least one reducer-unfriendly group. In addition, let the sample count of the largest reducer-unfriendly group in the region be s, we annotate the region with **the appropriate
-partition factor**, an integer that is closest to (s/(r * n))^3
+A region is a reducer-unfriendly if it contains at least one reducer-unfriendly group. In addition, let the sample count of the largest reducer-unfriendly group in the region be s, we annotate the region with **the appropriate partition factor**, an integer that is closest to (s/(r * n))^3
 
 Batch Areas
 ======
@@ -99,14 +98,14 @@ Reading more in the paper how to form batches
 My experiment
 ======
 Naive algorithm: 
-- Num of intermediate keys: 20 989 216 = 1 311 826 * 2^4 
+- Number of intermediate keys: 20 989 216 = 1 311 826 * 2^4 
 - Size of intermediate keys: 2.54 GB
 - Time execution: 3 minutes
 
 MRCube algorithm:
 
 Assumption:
-- The limit tuples that one recuder can handle: 10000
+- The limit tuples that one reducer can handle: 10000
 - Data size: 1311826
 
 Sampling: 
@@ -124,5 +123,6 @@ Batching:
 - AC AD ACD
 - AB ABD ABC ABCD
 
-- Num of intermediate keys: 6 559 130 = 1311826 * 5 (batches)
+- Number of intermediate keys: 6 559 130 = 1311826 * 5 (batches)
 - Size of intermediate keys: 762 MB
+
