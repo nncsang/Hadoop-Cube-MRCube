@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Hadoop-cube-mrcube by nncsang</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Hadoop-cube-mrcube</h1>
+      <h2 class="project-tagline"></h2>
+      <a href="https://github.com/nncsang/Hadoop-Cube-MRCube" class="btn">View on GitHub</a>
+      <a href="https://github.com/nncsang/Hadoop-Cube-MRCube/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/nncsang/Hadoop-Cube-MRCube/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="mrcube" class="anchor" href="#mrcube" aria-hidden="true"><span class="octicon octicon-link"></span></a>MRCube</h1>
+
+<p>In this project, I implemented MRCube algorithm which is described in <strong>"Distributed Cube Materialization on Holistic Measures"</strong> of <em>Arnab Nandi, Cong Yu, Philip Bohannon, Raghu Ramakrishnan</em>.</p>
+
+<h1>
+<a id="dataset" class="anchor" href="#dataset" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dataset</h1>
+
+<ul>
+<li>
+<a href="http://stat-computing.org/dataexpo/2009/the-data.html">http://stat-computing.org/dataexpo/2009/the-data.html</a>: data from 1987</li>
+<li>Uncompressed size:  127.2MB</li>
+<li>Number of records: 1 311 827</li>
+<li>Fields interested: Month, FlightNum (Flight number), Des (Destination), Distance (4 fields in total)</li>
+</ul>
+
+<h1>
+<a id="summary" class="anchor" href="#summary" aria-hidden="true"><span class="octicon octicon-link"></span></a>Summary</h1>
+
+<ul>
+<li>Cube computation over massive datasets is critical for many important analyses done in the real world</li>
+<li>
+<strong>Algebraic measures</strong> (e.g. <em>SUM</em>) are easy to parallel. On the other hand, <strong>holistic measures</strong> (e.g. <em>REACH, TOP-K</em>) is non-trivial.</li>
+<li>In the paper, the authors identified an important subset of holistic measures and introduced MR-Cube algorithm for efficient cube computation on these measures.</li>
+</ul>
+
+<h1>
+<a id="data-cube-analysis" class="anchor" href="#data-cube-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Data cube analysis</h1>
+
+<p>Consider a warehouse: <strong>(city, state, country, day, month, year, sales)</strong> in which:</p>
+
+<ul>
+<li>
+<em>(city, state, country)</em>: location dimension</li>
+<li>
+<em>(day, month, year)</em>: temporal dimension
+Cube analysis computes aggregate measures (e.g. <em>sales</em>) over all possible groups defined by the two dimensions. </li>
+</ul>
+
+<p>There are two main limitations in the existing techniques:</p>
+
+<ul>
+<li>They designed for a <strong>single machine</strong> or <strong>clusters with small number of nodes</strong>. With the growing of data (terabytes accumulated per day), it is <strong>difficult</strong> to <strong>process</strong> data with that infrastructure.</li>
+<li>Many of them <strong>takes advantage</strong> of the measure being <strong>algebraic</strong>.</li>
+</ul>
+
+<p>How to <strong>efficiently extend</strong> cube analysis for <strong>holistic measures</strong> in <strong>Map Reduce paradigm</strong>? Existing problems:</p>
+
+<ul>
+<li>
+<em>Effective distribute data</em>: avoid overwhelmed for any single machine --&gt; addressed by <strong>identifying the partially algebraic measures</strong> and <strong>value partition mechanism</strong>.</li>
+<li>
+<em>Effective distributing computation</em>: good balance between the amount of intermediate data being produced and the pruning unnecessary data --&gt; addressed by <strong>batch areas</strong> </li>
+</ul>
+
+<h1>
+<a id="definitions" class="anchor" href="#definitions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Definitions</h1>
+
+<ul>
+<li>
+<strong>Dimension attributes</strong>: attributes that users want to analyze</li>
+<li>
+<strong>Cube lattice</strong>: all possible grouping(s) of the attributes</li>
+<li>
+<strong>Cube region</strong>: each node in cube lattice represents one possible grouping </li>
+<li>
+<strong>Cube group</strong>: an actual tuple belonging to a cube region.</li>
+<li>Each edge in the lattice represents a parent/child relationship between two cube regions or two cube groups</li>
+<li>
+<strong>Cubing task</strong>: is to compute given measures for all valid cube groups</li>
+<li>
+<strong>Algebraic &amp; Holistic &amp; monotonic</strong>: please find in the paper for the formal definitions</li>
+</ul>
+
+<h1>
+<a id="challenges" class="anchor" href="#challenges" aria-hidden="true"><span class="octicon octicon-link"></span></a>Challenges</h1>
+
+<p><em>Cube expressed in Pig</em> by disjunction of group-by queries, then it combines all queries into a single MapReduce job. This approach is simple but only efficient for small datasets. When the scale of data increases, this algorithm to perform poorly and eventually fail due to the huge size of intermediate data and size of large groups.</p>
+
+<ul>
+<li>Size of Intermediate Data: |C| * |D|, where |C| is the number of regions in the cube lattice and |D| is the size of the input data</li>
+<li>Size of Large Groups: The reducer that is assigned the cube regions at the bottom part of the cube lattice essentially has to compute the measure for the entire dataset, which is usually large enough to cause the reducer to take significantly longer time to finish than others or even fail. For algebraic measures, this challenge can addressed by not processing those groups directly: we can first compute measures only for those smaller, reducer-friendly, groups, then combine those measures to produce the measure for the larger, reducer-unfriendly, groups. Such measures are also amenable to mapper-side aggregation which further decreases the load on the shuffle and reduce phases. For holistic measures, however, measures for larger groups cannot be assembled from their smaller child groups, and mapper-side aggregation is also not possible. Hence, we need a different approach.</li>
+</ul>
+
+<h1>
+<a id="the-mr-cube-approach" class="anchor" href="#the-mr-cube-approach" aria-hidden="true"><span class="octicon octicon-link"></span></a>The MR-Cube approach</h1>
+
+<p><strong>Note</strong>: the complexity of cubing tasks depends on:</p>
+
+<ul>
+<li>
+<strong>data size</strong>: impacts intermediate data size, the size of large group</li>
+<li>
+<strong>cube lattice size</strong> (is controlled by the number/depth of dimensions impacts intermediate data size</li>
+</ul>
+
+<p>MR-Cube approach deal with those complexities in a two-pronged attack: <strong>data partitioning</strong> and <strong>cube lattice partitioning</strong></p>
+
+<h1>
+<a id="partially-algebraic-measures" class="anchor" href="#partially-algebraic-measures" aria-hidden="true"><span class="octicon octicon-link"></span></a>Partially Algebraic Measures</h1>
+
+<ul>
+<li>Purpose: to identify a subset of holistic measures that are easy to compute in <strong>parallel</strong> than an arbitrary holistic measure.</li>
+<li>We call this technique of partitioning large groups based on the algebraic attribute <strong>value partitioning</strong>, and the ratio by which a group is partitioned the <strong>partition factor</strong>
+</li>
+</ul>
+
+<h1>
+<a id="value-partitioning" class="anchor" href="#value-partitioning" aria-hidden="true"><span class="octicon octicon-link"></span></a>Value Partitioning</h1>
+
+<p>An easy way to accomplish value partitioning is to run the naive algorithm, but further <strong>partition each cube group based on the algebraic attribute</strong>. The number of map keys being produced is now <strong>the product of the number of groups and the partition factor</strong>.</p>
+
+<p>Observations:</p>
+
+<ul>
+<li>Many of the original groups contain a manageable number of tuples and partitioning those groups is entirely unnecessary</li>
+<li>Even for large, reducer- unfriendly, groups, some will require partitioning into many sub-groups (i.e., large partition factor), while others will only need to be partitioned into a few sub-groups</li>
+</ul>
+
+<p>The idea is to perform value partitioning only on groups that are likely to be <strong>reducer-unfriendly</strong> and <strong>dynamically adjust the partition factor</strong></p>
+
+<p>Approaches:</p>
+
+<ul>
+<li>Detect reducer unfriendly groups on the fly and perform partitioning upon detection -&gt; overwhelm the mapper since it requires us to maintain information about groups visited.</li>
+<li>Scan the data and compile a list of potentially reducer-unfriendly groups for which the mapper will perform partitioning -&gt; Checking against a potentially large list slows down the mapper.</li>
+</ul>
+
+<p>Based on these analyses, the authors proposed <strong>sampling approach</strong></p>
+
+<h1>
+<a id="sampling-approach" class="anchor" href="#sampling-approach" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sampling Approach</h1>
+
+<ul>
+<li>Estimate the <strong>reducer-unfriendliness</strong> of each <strong>cube region</strong> based on <strong>the number of groups it is estimated to have</strong>
+</li>
+<li>Perform <strong>partitioning for all groups</strong> within the list of cube regions (a small list) that are estimated to be reducer <strong>unfriendly</strong>
+</li>
+</ul>
+
+<p>This sampling is accomplished by performing cube computation using the naive algorithm on a small random subset of data, with count as the measure.</p>
+
+<p>We declare a group G to be reducer-unfriendly if we observe more than 0.75rN tuples of G in the sample, where N is the sample size and r= c/ |D| denotes the maximum number of tuples a single reducer can handle (c) as a percentage of the overall data size (|D|). (See Proposition 1 in the paper for more details)</p>
+
+<p>A region is a reducer-unfriendly if it contains at least one reducer-unfriendly group. In addition, let the sample count of the largest reducer-unfriendly group in the region be s, we annotate the region with <strong>the appropriate partition factor</strong>, an integer that is closest to (s/(r * n))^3</p>
+
+<h1>
+<a id="batch-areas" class="anchor" href="#batch-areas" aria-hidden="true"><span class="octicon octicon-link"></span></a>Batch Areas</h1>
+
+<p>Given the annotated cube lattice, we can again directly apply the naive algorithm, process each cube group independently with the added safeguard that partitions the groups that belong to a reducer-unfriendly region. But <strong>each tuple</strong> is still duplicated <strong>at least |C| times</strong> and the naive approach is its <strong>incompatibility</strong> with <strong>pruning for monotonic measures</strong>. We need combine regions into batch areas.</p>
+
+<p>Each batch area represents <strong>a collection of regions</strong> that share a <strong>common ancestor region</strong>. Mappers can now emit <strong>one key-value pair</strong> per batch for each data tuple. Reducers, on the other hand, instead of simply applying the measure function, <strong>execute a traditional cube computation algorithm</strong> over the set of tuples using the batch area as the local cube lattice.</p>
+
+<p>Reading more in the paper how to form batches</p>
+
+<h1>
+<a id="my-experiment" class="anchor" href="#my-experiment" aria-hidden="true"><span class="octicon octicon-link"></span></a>My experiment</h1>
+
+<p>Naive algorithm: </p>
+
+<ul>
+<li>Number of intermediate keys: 20 989 216 = 1 311 826 * 2^4 </li>
+<li>Size of intermediate keys: 2.54 GB</li>
+<li>Time execution: 3 minutes</li>
+</ul>
+
+<p>MRCube algorithm:</p>
+
+<p>Assumption:</p>
+
+<ul>
+<li>The limit tuples that one reducer can handle: 10000</li>
+<li>Data size: 1311826</li>
+</ul>
+
+<p>Sampling: </p>
+
+<ul>
+<li>r = limitTuplesPerReducer / dataSize = 10000 / 1311826 ~ 0.0076</li>
+<li>N = 100 / r + 1 = 13119;</li>
+<li>Result: two regions are unfriendly reducers which are (all, all, all, all), (all, month, all, all) and (all, all, all, distance) with the partition factor is 2.7%</li>
+</ul>
+
+<p>Batching:
+<em>A: month, B: flightnum, C: des, D: distance</em></p>
+
+<p>5 patches:</p>
+
+<ul>
+<li>(all, all, all, all) &amp; A</li>
+<li>C D CD</li>
+<li>B BC BD BCD</li>
+<li>AC AD ACD</li>
+<li><p>AB ABD ABC ABCD</p></li>
+<li><p>Number of intermediate keys: 6 559 130 = 1311826 * 5 (batches)</p></li>
+<li>Size of intermediate keys: 762 MB</li>
+</ul>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/nncsang/Hadoop-Cube-MRCube">Hadoop-cube-mrcube</a> is maintained by <a href="https://github.com/nncsang">nncsang</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
